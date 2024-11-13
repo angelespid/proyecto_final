@@ -1,29 +1,32 @@
 #ifndef PERSONAJE_H
 #define PERSONAJE_H
 
-#include <QGraphicsRectItem>
-#include <QTimer>
 #include <QObject>
+#include <QGraphicsPixmapItem>
+#include <QPixmap>
+#include <QTimer>
 
-class Personaje : public QObject, public QGraphicsRectItem {
+class Personaje : public QObject, public QGraphicsPixmapItem {
     Q_OBJECT
 
 public:
-    Personaje();
+    explicit Personaje(QObject *parent = nullptr);
     void moverIzquierda();
     void moverDerecha();
     void saltar();
     void perderVida();
     int obtenerVidas() const;
 
-private slots:
-    void actualizarSalto();
-
 private:
     int vidas;
-    QTimer* saltoTimer;
-    int alturaActual;  // Para controlar el progreso del salto
+    QPixmap hojaSprites;
+    int fotogramaActual;
+    QTimer *saltoTimer;
+    int alturaActual;
     bool estaSaltando;
+
+    void actualizarSprite();
+    void actualizarSalto();
 };
 
 #endif // PERSONAJE_H

@@ -1,69 +1,84 @@
 #include "personaje.h"
 #include <QDebug>
+#include <QGraphicsScene>
 
-Personaje::Personaje() : vidas(3), estaSaltando(false), alturaActual(0) {
-    setRect(0, 0, 50, 100);  // Representación del personaje como un rectángulo (50x100)
+Personaje::Personaje(QObject *parent)
+    : QObject(parent), vidas(3), fotogramaActual(0), estaSaltando(false), alturaActual(0) {
 
+    // Cargar la hoja de sprites desde el archivo
+    if (!hojaSprites.load("SpriteGoku.png")) {
+        qDebug() << "Error: No se pudo cargar la imagen de sprites";
+    } else {
+        qDebug() << "Imagen de sprites cargada exitosamente.";
+    }
+
+    // Establecer el primer fotograma
+    setPixmap(hojaSprites.copy(0, 0, 32, 32));  // Suponiendo que cada fotograma es de 32x32 px
+
+    // Configurar el temporizador de salto
     saltoTimer = new QTimer(this);
     connect(saltoTimer, &QTimer::timeout, this, &Personaje::actualizarSalto);
 }
 
 void Personaje::moverIzquierda() {
-    if (x() > 0) {  // Evita que el personaje salga del borde izquierdo
-        setPos(x() - 10, y());
-        qDebug() << "Personaje movido a la izquierda. Nueva posición:" << pos();
+    // Asegura que el personaje no se salga del límite izquierdo
+    if (scene() && x() - 5 >= scene()->sceneRect().left()) {
+        setX(x() - 5);  // Mover hacia la izquierda
+        fotogramaActual = (fotogramaActual + 1) % 3;
+        actualizarSprite();
+    } else {
+        qDebug() << "Límite izquierdo alcanzado";
     }
 }
 
 void Personaje::moverDerecha() {
-    if (x() < 750) {  // Evita que el personaje salga del borde derecho (asumiendo un ancho de escena de 800)
-        setPos(x() + 10, y());
-        qDebug() << "Personaje movido a la derecha. Nueva posición:" << pos();
+    // Asegura que el personaje no se salga del límite derecho
+    if (scene() && x() + 5 + pixmap().width() <= scene()->sceneRect().right()) {
+        setX(x() + 5);  // Mover hacia la derecha
+        fotogramaActual = (fotogramaActual + 1) % 3;
+        actualizarSprite();
+    } else {
+        qDebug() << "Límite derecho alcanzado";
     }
 }
 
+void Personaje::actualizarSprite() {
+    int xPos = fotogramaActual * 32;
+    setPixmap(hojaSprites.copy(xPos, 0, 32, 32));
+}
+
 void Personaje::saltar() {
-    if (!estaSaltando) {  // Solo permite un salto a la vez
+    if (!estaSaltando) {
         estaSaltando = true;
         alturaActual = 0;
-        saltoTimer->start(30);  // Inicia el temporizador para la animación del salto
+        saltoTimer->start(30);
         qDebug() << "Personaje ha iniciado un salto.";
     }
 }
 
 void Personaje::actualizarSalto() {
-    const int alturaMaxima = 100;  // Altura máxima del salto en píxeles
-    const int velocidadSalto = 5;  // Incremento por cada actualización
+    const int alturaMaxima = 100;
+    const int velocidadSalto = 5;
 
     if (alturaActual < alturaMaxima && estaSaltando) {
-        // Subir
-        setPos(x(), y() - velocidadSalto);
-        alturaActual += velocidadSalto;
+        // Limita el salto para que no salga de la parte superior de la escena
+        if (scene() && y() - velocidadSalto >= scene()->sceneRect().top()) {
+            setPos(x(), y() - velocidadSalto);
+            alturaActual += velocidadSalto;
+        }
     } else if (alturaActual >= 0 && estaSaltando) {
-        // Bajar
-        setPos(x(), y() + velocidadSalto);
-        alturaActual -= velocidadSalto;
+        // Limita la caída para que no salga de la parte inferior de la escena
+        if (scene() && y() + velocidadSalto + pixmap().height() <= scene()->sceneRect().bottom()) {
+            setPos(x(), y() + velocidadSalto);
+            alturaActual -= velocidadSalto;
+        }
 
-        // Cuando el personaje vuelve al suelo, detener el salto
+        // Detener el salto cuando el personaje vuelva al suelo
         if (alturaActual <= 0) {
             saltoTimer->stop();
             estaSaltando = false;
-            setPos(x(), y());  // Asegura que quede en el suelo
-            qDebug() << "Personaje ha terminado el salto. Nueva posición:" << pos();
+            setPos(x(), scene()->sceneRect().bottom() - pixmap().height());  // Asegura que quede en el suelo
+            qDebug() << "Personaje ha terminado el salto. Posición:" << pos();
         }
     }
 }
-
-void Personaje::perderVida() {
-    if (vidas > 0) {
-        vidas--;
-        qDebug() << "Vida perdida. Vidas restantes:" << vidas;
-    } else {
-        qDebug() << "El personaje no tiene vidas restantes.";
-    }
-}
-
-int Personaje::obtenerVidas() const {
-    return vidas;
-}
-
