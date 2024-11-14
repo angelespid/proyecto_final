@@ -1,66 +1,53 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-#include "personaje.h"
 #include <QGraphicsScene>
+#include <QGraphicsPixmapItem>
 #include <QKeyEvent>
 #include <QDebug>
-#include <QPainter>
 
 MainWindow::MainWindow(QWidget *parent)
-    : QMainWindow(parent)
-    , ui(new Ui::MainWindow)
-    , personaje(new Personaje())  // Inicializar el personaje aquí
-{
+    : QMainWindow(parent), ui(new Ui::MainWindow), personaje(new Personaje()) {
     ui->setupUi(this);
 
-    // Crear la escena y establecer sus dimensiones
+    // Crear la escena y configurar sus dimensiones
     QGraphicsScene* escena = new QGraphicsScene(this);
-    escena->setSceneRect(0, 0, 800, 600);  // Tamaño de la escena
+    escena->setSceneRect(0, 0, 1080, 720);
 
-    // Agregar el personaje a la escena
+    // Cargar la imagen de fondo
+    QGraphicsPixmapItem* fondo = new QGraphicsPixmapItem(QPixmap("fondo.png"));
+    if (fondo->pixmap().isNull()) {
+        qDebug() << "Error: No se pudo cargar fondo.png";
+    }
+    fondo->setPos(0, 0);  // Posición inicial en la esquina superior izquierda
+    escena->addItem(fondo);  // Agregar el fondo a la escena
+
+    // Agregar el personaje a la escena y establecer su posición inicial sobre el fondo
     escena->addItem(personaje);
-    personaje->setPos(400, 500);  // Posición inicial del personaje
+    personaje->setPos(400, 500);
 
     // Configurar la vista para que muestre la escena
     ui->graphicsView->setScene(escena);
-    ui->graphicsView->setFixedSize(800, 600);  // Tamaño de la vista
+    ui->graphicsView->setFixedSize(1080, 720);
     ui->graphicsView->setRenderHint(QPainter::Antialiasing);
 }
 
 // Destructor
 MainWindow::~MainWindow() {
-    delete personaje;  // Liberar el recurso del personaje
+    delete personaje;
     delete ui;
 }
 
-// Evento de teclado para mover el personaje
+// Captura el evento de teclado para mover el personaje
 void MainWindow::keyPressEvent(QKeyEvent *event) {
-    int key = event->key();
-    qDebug() << "Tecla presionada (valor entero):" << key;
-
-    if (!personaje) return;
-
-    switch (key) {
-    case Qt::Key_Left:
-        qDebug() << "Mover izquierda";
-        personaje->moverIzquierda();
-        break;
-    case Qt::Key_Right:
-        qDebug() << "Mover derecha";
-        personaje->moverDerecha();
-        break;
-    case Qt::Key_Up:
-        qDebug() << "Saltar";
-        personaje->saltar();
-        break;
-    default:
+    if (personaje) {
+        personaje->moverPersonaje(event);
+    } else {
         QMainWindow::keyPressEvent(event);
     }
 }
+
+// Evento para enfocar la ventana al mostrarla
 void MainWindow::showEvent(QShowEvent *event) {
     QMainWindow::showEvent(event);
-    this->setFocus();  // Establecer el foco en la ventana al mostrarla
+    this->setFocus();  // Asegura que el foco esté en la ventana al mostrarla
 }
-
-
-

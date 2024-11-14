@@ -3,7 +3,7 @@
 
 #include <QObject>
 #include <QGraphicsPixmapItem>
-#include <QPixmap>
+#include <QKeyEvent>
 #include <QTimer>
 
 class Personaje : public QObject, public QGraphicsPixmapItem {
@@ -11,22 +11,17 @@ class Personaje : public QObject, public QGraphicsPixmapItem {
 
 public:
     explicit Personaje(QObject *parent = nullptr);
-    void moverIzquierda();
-    void moverDerecha();
+
+    void moverPersonaje(QKeyEvent *event);  // Método para mover el personaje según la tecla
     void saltar();
-    void perderVida();
-    int obtenerVidas() const;
 
 private:
-    int vidas;
-    QPixmap hojaSprites;
     int fotogramaActual;
-    QTimer *saltoTimer;
-    int alturaActual;
     bool estaSaltando;
+    QPixmap hojaSprites;
+    QTimer *saltoTimer;
 
     void actualizarSprite();
-    void actualizarSalto();
 };
 
 #endif // PERSONAJE_H
